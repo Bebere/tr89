@@ -724,7 +724,7 @@ namespace System
     // Optional<T> is similar to Nullable<T> except that it is not limited to T being a value type.
 
     [Serializable]
-    public struct Optional<T> : IComparable, IComparable<Optional<T>>, INullableValue
+    public struct Optional<T> : IComparable, IComparable<Optional<T>>
     { // fields are private
         private T myValue;
         private bool isValid;
@@ -831,19 +831,6 @@ namespace System
         public bool Equals(Optional<T> other)
         {
             return this == other;
-        }
-
-        // INullableValue
-
-        object INullableValue.Value
-        {
-            get
-            {
-                if (isValid)
-                    return myValue;
-                else
-                    throw new InvalidOperationException();
-            }
         }
 
         // Conversion operators
