@@ -1,0 +1,20 @@
+Below is the, for lack of a better term, original README. A difference with the reference implementation is that the implementation has been split to one file per type family+attendant helper types.
+
+Ecma Common Generics
+
+Reference implementation of Ecma CLI Technical Report "Common Generics"
+
+This implementation serves only to describe the types and their semantics, it is not intended to be the way these types must be implemented.
+Note: Conventional implementation guidelines would place each type in its own file. We have not done this here for convenience only.
+
+Nigel Perry, New Zealand
+
+Feedback on these types is encouraged.
+
+Email: ecmacli @zoot.net.nz
+Web: www.mondrian-script.org/ecma
+
+Note: Serializable is not a standard attribute and is not therefore specified in the formal specification of these types. However the standard library requires that all its types be marked as serializable by some unspecified method, so in this reference implementation the [Serializable] attribute is included.
+
+Note: For some of these types there are useful members which are ambiguous if two or more of the type's parameters are instantiated with the same type. A decision needs to be made whether allowing this potential ambiguity is acceptable given the benefit. Note that such members are non-CLI compliant. Whether these members are included is controlled by the following conditional compilation flag
+#define AllowPotentialAmbiguity
