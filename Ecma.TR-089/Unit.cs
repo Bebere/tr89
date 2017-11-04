@@ -1,9 +1,9 @@
-﻿//[assembly:System.CLSCompliant(true)] 
+﻿[assembly:System.CLSCompliant(true)] 
 namespace System
 {
     // The single-valued type.
     [Serializable]
-    public enum Unit {
+    public enum Unit : byte {
         Unit
     }
 }

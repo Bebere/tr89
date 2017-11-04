@@ -8,20 +8,27 @@
   <PropertyGroup>
 	<Title>Ecma.TR-089</Title>
 	<Product>Ecma.TR-089</Product>
-	<Version>0.0.2</Version>
-	<FileVersion>0.0.2</FileVersion>
-	<Authors>Ecma International</Authors>
-	<Company>Ecma International</Company>
+	<Version>1.0.0</Version>
+	<FileVersion>1.0.0</FileVersion>
+	<Authors>ARJANEN Loïc Jean David</Authors>
 	<Owner>ARJANEN Loïc Jean David</Owner>
-	<Description>Ecma TR/89 reference implementation</Description>
-	<Summary>Ecma TR/89 implementation. The version v0.x is the reference implementation, released under the 3-clause BSD licence by Ecma.</Summary>
-	<Copyright>Copyright © Ecma International 2006</Copyright>
+	<Company />
+	<Description>Ecma TR/89 implementation</Description>
+	<Summary>Ecma TR/89 implementation, based on the reference one. For the reference implementation itself, see v0.x of this package.</Summary>
+	<Copyright>Copyright © Ecma International 2006
+	Copyright © ARJANEN Loïc Jean David 2017</Copyright>
 	<PackageProjectUrl>https://tr89.codeplex.com/</PackageProjectUrl>
-	<PackageLicenseUrl>http://www.ecma-international.org/memento/Policies/Ecma_Policy_on_Submission_Inclusion_and_Licensing_of_Software.htm</PackageLicenseUrl>
+	<PackageLicenseUrl>https://opensource.org/licenses/BSD-3-Clause</PackageLicenseUrl>
 	<RepositoryUrl>https://git01.codeplex.com/tr89</RepositoryUrl>
 	<RepositoryType>git</RepositoryType>
-	<PackageReleaseNotes>Splitting the implementation's file in separate files and adding new platform targets.</PackageReleaseNotes>
+	<PackageReleaseNotes>Adding Framework 4.0 on targets and changes to the implementation.</PackageReleaseNotes>
 	<PackageTags>.net ecma</PackageTags>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFramework)'!='net20' AND '$(TargetFramework)'!='net35' AND '$(TargetFramework)'!='net30'">
+    <DefineConstants>FEATURE_GENACTION_FUNC_TUPLE</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFramework)'!='net20' AND '$(TargetFramework)'!='net30'">
+    <DefineConstants>FEATURE_ACTION_BOX</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
 	<Folder Include="Properties\" />

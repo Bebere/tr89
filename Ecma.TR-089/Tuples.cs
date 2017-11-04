@@ -1,45 +1,86 @@
-// Hashing: the hash for a tuple should be some combination of the hashes of its elements.
-// In this sample implementation we use a rotate+xor combintation for the hash function.
-// The CLI has no bit rotate instructions, and C# has no bit rotate operators, so we
-// define a helper here.
-// This class could be the base of all Tuple<>'s. In this reference implementation it
-// is not as RotateRight is not part of the specification of Tuple<>'s.
+using System.Runtime.CompilerServices;
+
+#if FEATURE_GENACTION_FUNC_TUPLE
+    [assembly: TypeForwardedTo(typeof(System.Tuple<,>))]
+    [assembly: TypeForwardedTo(typeof(System.Tuple<,,>))]
+    [assembly: TypeForwardedTo(typeof(System.Tuple<,,,>))]
+    [assembly: TypeForwardedTo(typeof(System.Tuple<,,,,>))]
+    [assembly: TypeForwardedTo(typeof(System.Tuple<,,,,,>))]
+    [assembly: TypeForwardedTo(typeof(System.Tuple<,,,,,,>))]
+    [assembly: TypeForwardedTo(typeof(System.Tuple<,,,,,,,>))]
+    [assembly: TypeForwardedTo(typeof(System.Tuple<,,,,,,,,>))]
+    [assembly: TypeForwardedTo(typeof(System.Tuple<,,,,,,,,,>))]
+#endif
 namespace System
 {
-    internal static class _Tuple
+    // Hashing: the hash for a tuple should be some combination of the hashes of its elements.
+    // In this sample implementation we use a rotate+xor combintation for the hash function.
+    // The CLI has no bit rotate instructions, and C# has no bit rotate operators, so we
+    // define a helper here.
+    // This class is here the base of all Tuple<>'s, with each inheriting from the previous one.
+    public abstract class _Tuple
     {
-        internal static Int32 RotateRight(Int32 value, Int32 places)
+        protected static Int32 RotateRight(Int32 value)
         {
-            places &= 0x1F;
-            if (places == 0) return value;
-            Int32 mask = ~0x7FFFFFFF >> (places - 1);
-            return ((value >> places) & ~mask) | ((value << (32 - places)) & mask);
+            var tmp = (UInt32)value;
+            tmp = (tmp >> 1) | (tmp << (31));
+            return (Int32)tmp;
         }
+
+        public static bool operator ==(_Tuple left, _Tuple right)
+        {
+            return left == null ? right == null : left.Equals(right);
+        }
+
+        public static bool operator !=(_Tuple left, _Tuple right)
+        {
+            return !(left == right);
+        }
+
+        public abstract override bool Equals(object other);
+
+        public abstract override int GetHashCode();
     }
 
-    // The Tuple types are straighforward. All fields are public and no properties are
-    // defined to access them, this follows the common usage of tuples.
+    // The Tuple types are straighforward. All fields are accessed through
+    // readonly properties and are classes, as in the .Net Framework's
+    // implementation.
     // A constructor, Equals, GetHashCode and ToString are defined for each type.
     // Operators == and != are provided as per class library design guidelines.
 
     // 2-tuple
     // This tuple has two extra methods to allow Tuple<A,B> and KeyValuePair to interwork easily
     [Serializable]
-    public struct Tuple<A, B>
+    public class Tuple<A, B> : _Tuple
     {
-        public A ItemA;
-        public B ItemB;
+        private readonly A _item1;
+        private readonly B _item2;
+
+        public A Item1
+        {
+            get
+            {
+                return _item1;
+            }
+        }
+        public B Item2
+        {
+            get
+            {
+                return _item2;
+            }
+        }
 
         public Tuple(A valueA, B valueB)
         {
-            ItemA = valueA;
-            ItemB = valueB;
+            _item1 = valueA;
+            _item2 = valueB;
         }
 
         // convert a Tuple into a KeyValuePair
         public static implicit operator Collections.Generic.KeyValuePair<A, B>(Tuple<A, B> tValue)
         {
-            return new Collections.Generic.KeyValuePair<A, B>(tValue.ItemA, tValue.ItemB);
+            return new Collections.Generic.KeyValuePair<A, B>(tValue._item1, tValue._item2);
         }
 
         // convert a KeyValuePair into a Tuple
@@ -48,519 +89,335 @@ namespace System
             return new Tuple<A, B>(kvValue.Key, kvValue.Value);
         }
 
-        public static bool operator ==(Tuple<A, B> left, Tuple<A, B> right)
-        {
-            return left.ItemA.Equals(right.ItemA)
-                   && left.ItemB.Equals(right.ItemB);
-        }
-
-        public static bool operator !=(Tuple<A, B> left, Tuple<A, B> right)
-        {
-            return !(left == right);
-        }
-
         public override bool Equals(object other)
         {
-            return other is Tuple<A, B> && (this == (Tuple<A, B>)other);
+            var buf = other as Tuple<A, B>;
+            return buf != null
+                && _item1.Equals(buf._item1)
+                && _item2.Equals(buf._item2);
         }
 
         public override int GetHashCode()
         {
-            return ItemA.GetHashCode()
-                   ^ _Tuple.RotateRight(ItemB.GetHashCode(), 1);
+            return _item1.GetHashCode()
+                   ^ RotateRight(_item2.GetHashCode());
         }
 
         public override string ToString()
         {
-            return String.Format("({0}, {1})", ItemA, ItemB);
+            return String.Format("({0}, {1})", _item1, _item2);
         }
     }
 
     // 3-tuple
     [Serializable]
-    public struct Tuple<A, B, C>
+    public class Tuple<A, B, C> : Tuple<A, B>
     {
-        public A ItemA;
-        public B ItemB;
-        public C ItemC;
+        private readonly C _item3;
 
-        public Tuple(A valueA, B valueB, C valueC)
+        public C Item3
         {
-            ItemA = valueA;
-            ItemB = valueB;
-            ItemC = valueC;
+            get
+            {
+                return _item3;
+            }
         }
 
-        public static bool operator ==(Tuple<A, B, C> left, Tuple<A, B, C> right)
+        public Tuple(A valueA, B valueB, C valueC) : base(valueA, valueB)
         {
-            return left.ItemA.Equals(right.ItemA)
-                   && left.ItemB.Equals(right.ItemB)
-                   && left.ItemC.Equals(right.ItemC);
-        }
-
-        public static bool operator !=(Tuple<A, B, C> left, Tuple<A, B, C> right)
-        {
-            return !(left == right);
+            _item3 = valueC;
         }
 
         public override bool Equals(object other)
         {
-            return other is Tuple<A, B, C> && (this == (Tuple<A, B, C>)other);
+            var tmp = other as Tuple<A, B, C>;
+            return tmp != null && _item3.Equals(tmp._item3) && ((Tuple<A, B>)this).Equals(tmp);
         }
 
         public override int GetHashCode()
         {
-            return ItemA.GetHashCode()
-                   ^ _Tuple.RotateRight(ItemB.GetHashCode(), 1)
-                   ^ _Tuple.RotateRight(ItemC.GetHashCode(), 2);
+            return _item3.GetHashCode()
+                   ^ RotateRight(base.GetHashCode());
         }
 
         public override string ToString()
         {
-            return String.Format("({0}, {1}, {2})", ItemA, ItemB, ItemC);
+            return String.Format("({0}, {1}, {2})", Item1, Item2, _item3);
         }
     }
 
     // 4-tuple
     [Serializable]
-    public struct Tuple<A, B, C, D>
+    public class Tuple<A, B, C, D> : Tuple<A, B, C>
     {
-        public A ItemA;
-        public B ItemB;
-        public C ItemC;
-        public D ItemD;
+        private readonly D _item4;
 
-        public Tuple(A valueA, B valueB, C valueC, D valueD)
+        public D Item4
         {
-            ItemA = valueA;
-            ItemB = valueB;
-            ItemC = valueC;
-            ItemD = valueD;
+            get
+            {
+                return _item4;
+            }
         }
 
-        public static bool operator ==(Tuple<A, B, C, D> left, Tuple<A, B, C, D> right)
+        public Tuple(A valueA, B valueB, C valueC, D valueD) : base(valueA, valueB, valueC)
         {
-            return left.ItemA.Equals(right.ItemA)
-                   && left.ItemB.Equals(right.ItemB)
-                   && left.ItemC.Equals(right.ItemC)
-                   && left.ItemD.Equals(right.ItemD);
-        }
-
-        public static bool operator !=(Tuple<A, B, C, D> left, Tuple<A, B, C, D> right)
-        {
-            return !(left == right);
+            _item4 = valueD;
         }
 
         public override bool Equals(object other)
         {
-            return other is Tuple<A, B, C, D> && (this == (Tuple<A, B, C, D>)other);
+            var tmp = other as Tuple<A, B, C, D>;
+            return tmp != null && _item4.Equals(tmp._item4) && ((Tuple<A, B, C>)this).Equals(tmp);
         }
 
         public override int GetHashCode()
         {
-            return ItemA.GetHashCode()
-                   ^ _Tuple.RotateRight(ItemB.GetHashCode(), 1)
-                   ^ _Tuple.RotateRight(ItemC.GetHashCode(), 2)
-                   ^ _Tuple.RotateRight(ItemD.GetHashCode(), 3);
+            return _item4.GetHashCode()
+                   ^ RotateRight(base.GetHashCode());
         }
 
         public override string ToString()
         {
-            return String.Format("({0}, {1}, {2}, {3})", ItemA, ItemB, ItemC, ItemD);
+            return String.Format("({0}, {1}, {2}, {3})", Item1, Item2, Item3, _item4);
         }
     }
 
     // 5-tuple
     [Serializable]
-    public struct Tuple<A, B, C, D, E>
+    public class Tuple<A, B, C, D, E> : Tuple<A, B, C, D>
     {
-        public A ItemA;
-        public B ItemB;
-        public C ItemC;
-        public D ItemD;
-        public E ItemE;
+        private readonly E _item5;
 
-        public Tuple(A valueA, B valueB, C valueC, D valueD, E valueE)
+        public E Item5
         {
-            ItemA = valueA;
-            ItemB = valueB;
-            ItemC = valueC;
-            ItemD = valueD;
-            ItemE = valueE;
+            get
+            {
+                return _item5;
+            }
         }
 
-        public static bool operator ==(Tuple<A, B, C, D, E> left, Tuple<A, B, C, D, E> right)
+        public Tuple(A valueA, B valueB, C valueC, D valueD, E valueE) : base(valueA, valueB, valueC, valueD)
         {
-            return left.ItemA.Equals(right.ItemA)
-                   && left.ItemB.Equals(right.ItemB)
-                   && left.ItemC.Equals(right.ItemC)
-                   && left.ItemD.Equals(right.ItemD)
-                   && left.ItemE.Equals(right.ItemE);
-        }
-
-        public static bool operator !=(Tuple<A, B, C, D, E> left, Tuple<A, B, C, D, E> right)
-        {
-            return !(left == right);
+            _item5 = valueE;
         }
 
         public override bool Equals(object other)
         {
-            return other is Tuple<A, B, C, D, E> && (this == (Tuple<A, B, C, D, E>)other);
+            var tmp = other as Tuple<A, B, C, D, E>;
+            return tmp != null && _item5.Equals(tmp._item5) && ((Tuple<A, B, C, D>)this).Equals(tmp);
         }
 
         public override int GetHashCode()
         {
-            return ItemA.GetHashCode()
-                   ^ _Tuple.RotateRight(ItemB.GetHashCode(), 1)
-                   ^ _Tuple.RotateRight(ItemC.GetHashCode(), 2)
-                   ^ _Tuple.RotateRight(ItemD.GetHashCode(), 3)
-                   ^ _Tuple.RotateRight(ItemE.GetHashCode(), 4);
+            return _item5.GetHashCode()
+                   ^ RotateRight(base.GetHashCode());
         }
 
         public override string ToString()
         {
-            return String.Format("({0}, {1}, {2}, {3}, {4})", ItemA, ItemB, ItemC, ItemD, ItemE);
+            return String.Format("({0}, {1}, {2}, {3}, {4})", Item1, Item2, Item3, Item4, _item5);
         }
     }
 
     // 6-tuple
     [Serializable]
-    public struct Tuple<A, B, C, D, E, F>
+    public class Tuple<A, B, C, D, E, F> : Tuple<A, B, C, D, E>
     {
-        public A ItemA;
-        public B ItemB;
-        public C ItemC;
-        public D ItemD;
-        public E ItemE;
-        public F ItemF;
+        private readonly F _item6;
+
+        public F Item6
+        {
+            get
+            {
+                return _item6;
+            }
+        }
 
         public Tuple(A valueA, B valueB, C valueC, D valueD, E valueE,
-          F valueF)
+          F valueF) : base(valueA, valueB, valueC, valueD, valueE)
         {
-            ItemA = valueA;
-            ItemB = valueB;
-            ItemC = valueC;
-            ItemD = valueD;
-            ItemE = valueE;
-            ItemF = valueF;
-        }
-
-        public static bool operator ==(Tuple<A, B, C, D, E, F> left, Tuple<A, B, C, D, E, F> right)
-        {
-            return left.ItemA.Equals(right.ItemA)
-                   && left.ItemB.Equals(right.ItemB)
-                   && left.ItemC.Equals(right.ItemC)
-                   && left.ItemD.Equals(right.ItemD)
-                   && left.ItemE.Equals(right.ItemE)
-                   && left.ItemF.Equals(right.ItemF);
-        }
-
-        public static bool operator !=(Tuple<A, B, C, D, E, F> left, Tuple<A, B, C, D, E, F> right)
-        {
-            return !(left == right);
+            _item6 = valueF;
         }
 
         public override bool Equals(object other)
         {
-            return other is Tuple<A, B, C, D, E, F> && (this == (Tuple<A, B, C, D, E, F>)other);
+            var tmp = other as Tuple<A, B, C, D, E, F>;
+            return tmp != null && _item6.Equals(tmp._item6) && ((Tuple<A, B, C, D, E>)this).Equals(tmp);
         }
 
         public override int GetHashCode()
         {
-            return ItemA.GetHashCode()
-                   ^ _Tuple.RotateRight(ItemB.GetHashCode(), 1)
-                   ^ _Tuple.RotateRight(ItemC.GetHashCode(), 2)
-                   ^ _Tuple.RotateRight(ItemD.GetHashCode(), 3)
-                   ^ _Tuple.RotateRight(ItemE.GetHashCode(), 4)
-                   ^ _Tuple.RotateRight(ItemF.GetHashCode(), 5);
+            return _item6.GetHashCode()
+                   ^ RotateRight(base.GetHashCode());
         }
 
         public override string ToString()
         {
             return String.Format("({0}, {1}, {2}, {3}, {4}, {5})",
-                                 ItemA, ItemB, ItemC, ItemD, ItemE,
-                                 ItemF);
+                                 Item1, Item2, Item3, Item4, Item5,
+                                 _item6);
         }
     }
 
     // 7-tuple
     [Serializable]
-    public struct Tuple<A, B, C, D, E, F, G>
+    public class Tuple<A, B, C, D, E, F, G> : Tuple<A, B, C, D, E, F>
     {
-        public A ItemA;
-        public B ItemB;
-        public C ItemC;
-        public D ItemD;
-        public E ItemE;
-        public F ItemF;
-        public G ItemG;
+        private readonly G _item7;
+
+        public G Item7
+        {
+            get
+            {
+                return _item7;
+            }
+        }
 
         public Tuple(A valueA, B valueB, C valueC, D valueD, E valueE,
-          F valueF, G valueG)
+          F valueF, G valueG) : base(valueA, valueB, valueC, valueD, valueE, valueF)
         {
-            ItemA = valueA;
-            ItemB = valueB;
-            ItemC = valueC;
-            ItemD = valueD;
-            ItemE = valueE;
-            ItemF = valueF;
-            ItemG = valueG;
-        }
-
-        public static bool operator ==(Tuple<A, B, C, D, E, F, G> left, Tuple<A, B, C, D, E, F, G> right)
-        {
-            return left.ItemA.Equals(right.ItemA)
-                   && left.ItemB.Equals(right.ItemB)
-                   && left.ItemC.Equals(right.ItemC)
-                   && left.ItemD.Equals(right.ItemD)
-                   && left.ItemE.Equals(right.ItemE)
-                   && left.ItemF.Equals(right.ItemF)
-                   && left.ItemG.Equals(right.ItemG);
-        }
-
-        public static bool operator !=(Tuple<A, B, C, D, E, F, G> left, Tuple<A, B, C, D, E, F, G> right)
-        {
-            return !(left == right);
+            _item7 = valueG;
         }
 
         public override bool Equals(object other)
         {
-            return other is Tuple<A, B, C, D, E, F, G> && (this == (Tuple<A, B, C, D, E, F, G>)other);
+            var tmp = other as Tuple<A, B, C, D, E, F, G>;
+            return tmp != null && _item7.Equals(tmp._item7) && ((Tuple<A, B, C, D, E, F>)this).Equals(tmp);
         }
 
         public override int GetHashCode()
         {
-            return ItemA.GetHashCode()
-                   ^ _Tuple.RotateRight(ItemB.GetHashCode(), 1)
-                   ^ _Tuple.RotateRight(ItemC.GetHashCode(), 2)
-                   ^ _Tuple.RotateRight(ItemD.GetHashCode(), 3)
-                   ^ _Tuple.RotateRight(ItemE.GetHashCode(), 4)
-                   ^ _Tuple.RotateRight(ItemF.GetHashCode(), 5)
-                   ^ _Tuple.RotateRight(ItemG.GetHashCode(), 6);
+            return _item7.GetHashCode()
+                   ^ _Tuple.RotateRight(base.GetHashCode());
         }
 
         public override string ToString()
         {
             return String.Format("({0}, {1}, {2}, {3}, {4}, {5}, {6})",
-                                 ItemA, ItemB, ItemC, ItemD, ItemE,
-                                 ItemF, ItemG);
+                                 Item1, Item2, Item3, Item4, Item5,
+                                 Item6, _item7);
         }
     }
 
     // 8-tuple
     [Serializable]
-    public struct Tuple<A, B, C, D, E, F, G, H>
+    public class Tuple<A, B, C, D, E, F, G, H> : Tuple<A, B, C, D, E, F, G>
     {
-        public A ItemA;
-        public B ItemB;
-        public C ItemC;
-        public D ItemD;
-        public E ItemE;
-        public F ItemF;
-        public G ItemG;
-        public H ItemH;
+        private readonly H _item8;
+
+        public H Item8
+        {
+            get
+            {
+                return _item8;
+            }
+        }
 
         public Tuple(A valueA, B valueB, C valueC, D valueD, E valueE,
-          F valueF, G valueG, H valueH)
+          F valueF, G valueG, H valueH) : base(valueA, valueB, valueC, valueD, valueE, valueF, valueG)
         {
-            ItemA = valueA;
-            ItemB = valueB;
-            ItemC = valueC;
-            ItemD = valueD;
-            ItemE = valueE;
-            ItemF = valueF;
-            ItemG = valueG;
-            ItemH = valueH;
-        }
-
-        public static bool operator ==(Tuple<A, B, C, D, E, F, G, H> left, Tuple<A, B, C, D, E, F, G, H> right)
-        {
-            return left.ItemA.Equals(right.ItemA)
-                   && left.ItemB.Equals(right.ItemB)
-                   && left.ItemC.Equals(right.ItemC)
-                   && left.ItemD.Equals(right.ItemD)
-                   && left.ItemE.Equals(right.ItemE)
-                   && left.ItemF.Equals(right.ItemF)
-                   && left.ItemG.Equals(right.ItemG)
-                   && left.ItemH.Equals(right.ItemH);
-        }
-
-        public static bool operator !=(Tuple<A, B, C, D, E, F, G, H> left, Tuple<A, B, C, D, E, F, G, H> right)
-        {
-            return !(left == right);
+            _item8 = valueH;
         }
 
         public override bool Equals(object other)
         {
-            return other is Tuple<A, B, C, D, E, F, G, H> && (this == (Tuple<A, B, C, D, E, F, G, H>)other);
+            var tmp = other as Tuple<A, B, C, D, E, F, G, H>;
+            return tmp != null && _item8.Equals(tmp._item8) && ((Tuple<A, B, C, D, E, F, G>)this).Equals(tmp);
         }
 
         public override int GetHashCode()
         {
-            return ItemA.GetHashCode()
-                   ^ _Tuple.RotateRight(ItemB.GetHashCode(), 1)
-                   ^ _Tuple.RotateRight(ItemC.GetHashCode(), 2)
-                   ^ _Tuple.RotateRight(ItemD.GetHashCode(), 3)
-                   ^ _Tuple.RotateRight(ItemE.GetHashCode(), 4)
-                   ^ _Tuple.RotateRight(ItemF.GetHashCode(), 5)
-                   ^ _Tuple.RotateRight(ItemG.GetHashCode(), 6)
-                   ^ _Tuple.RotateRight(ItemH.GetHashCode(), 7);
+            return _item8.GetHashCode()
+                   ^ RotateRight(base.GetHashCode());
         }
 
         public override string ToString()
         {
             return String.Format("({0}, {1}, {2}, {3}, {4}, {5}, {6}, {7})",
-                                 ItemA, ItemB, ItemC, ItemD, ItemE,
-                                 ItemF, ItemG, ItemH);
+                                 Item1, Item2, Item3, Item4, Item5,
+                                 Item6, Item7, _item8);
         }
     }
 
     // 9-tuple
     [Serializable]
-    public struct Tuple<A, B, C, D, E, F, G, H, I>
+    public class Tuple<A, B, C, D, E, F, G, H, I> : Tuple<A, B, C, D, E, F, G, H>
     {
-        public A ItemA;
-        public B ItemB;
-        public C ItemC;
-        public D ItemD;
-        public E ItemE;
-        public F ItemF;
-        public G ItemG;
-        public H ItemH;
-        public I ItemI;
+        private readonly I _item9;
+
+        public I Item9
+        {
+            get
+            {
+                return _item9;
+            }
+        }
 
         public Tuple(A valueA, B valueB, C valueC, D valueD, E valueE,
-          F valueF, G valueG, H valueH, I valueI)
+          F valueF, G valueG, H valueH, I valueI) : base(valueA, valueB, valueC, valueD, valueE, valueF, valueG, valueH)
         {
-            ItemA = valueA;
-            ItemB = valueB;
-            ItemC = valueC;
-            ItemD = valueD;
-            ItemE = valueE;
-            ItemF = valueF;
-            ItemG = valueG;
-            ItemH = valueH;
-            ItemI = valueI;
-        }
-
-        public static bool operator ==(Tuple<A, B, C, D, E, F, G, H, I> left, Tuple<A, B, C, D, E, F, G, H, I> right)
-        {
-            return left.ItemA.Equals(right.ItemA)
-                   && left.ItemB.Equals(right.ItemB)
-                   && left.ItemC.Equals(right.ItemC)
-                   && left.ItemD.Equals(right.ItemD)
-                   && left.ItemE.Equals(right.ItemE)
-                   && left.ItemF.Equals(right.ItemF)
-                   && left.ItemG.Equals(right.ItemG)
-                   && left.ItemH.Equals(right.ItemH)
-                   && left.ItemI.Equals(right.ItemI);
-        }
-
-        public static bool operator !=(Tuple<A, B, C, D, E, F, G, H, I> left, Tuple<A, B, C, D, E, F, G, H, I> right)
-        {
-            return !(left == right);
+            _item9 = valueI;
         }
 
         public override bool Equals(object other)
         {
-            return other is Tuple<A, B, C, D, E, F, G, H, I> && Equals((Tuple<A, B, C, D, E, F, G, H, I>)other);
+            var tmp = other as Tuple<A, B, C, D, E, F, G, H, I>;
+            return tmp != null && _item9.Equals(tmp._item9) && ((Tuple<A, B, C, D, E, F, G, H>)this).Equals(tmp);
         }
 
         public override int GetHashCode()
         {
-            return ItemA.GetHashCode()
-                   ^ _Tuple.RotateRight(ItemB.GetHashCode(), 1)
-                   ^ _Tuple.RotateRight(ItemC.GetHashCode(), 2)
-                   ^ _Tuple.RotateRight(ItemD.GetHashCode(), 3)
-                   ^ _Tuple.RotateRight(ItemE.GetHashCode(), 4)
-                   ^ _Tuple.RotateRight(ItemF.GetHashCode(), 5)
-                   ^ _Tuple.RotateRight(ItemG.GetHashCode(), 6)
-                   ^ _Tuple.RotateRight(ItemH.GetHashCode(), 7)
-                   ^ _Tuple.RotateRight(ItemI.GetHashCode(), 8);
+            return _item9.GetHashCode()
+                   ^ RotateRight(base.GetHashCode());
         }
 
         public override string ToString()
         {
             return String.Format("({0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8})",
-                                 ItemA, ItemB, ItemC, ItemD, ItemE,
-                                 ItemF, ItemG, ItemH, ItemI);
+                                 Item1, Item2, Item3, Item4, Item5,
+                                 Item6, Item7, Item8, _item9);
         }
     }
 
 
-    // 1--tuple
+    // 10-tuple
     [Serializable]
-    public struct Tuple<A, B, C, D, E, F, G, H, I, J>
+    public class Tuple<A, B, C, D, E, F, G, H, I, J> : Tuple<A, B, C, D, E, F, G, H, I>
     {
-        public A ItemA;
-        public B ItemB;
-        public C ItemC;
-        public D ItemD;
-        public E ItemE;
-        public F ItemF;
-        public G ItemG;
-        public H ItemH;
-        public I ItemI;
-        public J ItemJ;
+        private readonly J _item10;
+
+        public J Item10
+        {
+            get
+            {
+                return _item10;
+            }
+        }
 
         public Tuple(A valueA, B valueB, C valueC, D valueD, E valueE,
-          F valueF, G valueG, H valueH, I valueI, J valueJ)
+          F valueF, G valueG, H valueH, I valueI, J valueJ) : base(valueA, valueB, valueC, valueD, valueE, valueF, valueG, valueH, valueI)
         {
-            ItemA = valueA;
-            ItemB = valueB;
-            ItemC = valueC;
-            ItemD = valueD;
-            ItemE = valueE;
-            ItemF = valueF;
-            ItemG = valueG;
-            ItemH = valueH;
-            ItemI = valueI;
-            ItemJ = valueJ;
-        }
-
-        public static bool operator ==(Tuple<A, B, C, D, E, F, G, H, I, J> left, Tuple<A, B, C, D, E, F, G, H, I, J> right)
-        {
-            return left.ItemA.Equals(right.ItemA)
-                   && left.ItemB.Equals(right.ItemB)
-                   && left.ItemC.Equals(right.ItemC)
-                   && left.ItemD.Equals(right.ItemD)
-                   && left.ItemE.Equals(right.ItemE)
-                   && left.ItemF.Equals(right.ItemF)
-                   && left.ItemG.Equals(right.ItemG)
-                   && left.ItemH.Equals(right.ItemH)
-                   && left.ItemI.Equals(right.ItemI)
-                   && left.ItemJ.Equals(right.ItemJ);
-        }
-
-        public static bool operator !=(Tuple<A, B, C, D, E, F, G, H, I, J> left, Tuple<A, B, C, D, E, F, G, H, I, J> right)
-        {
-            return !(left == right);
+            _item10 = valueJ;
         }
 
         public override bool Equals(object other)
         {
-            return other is Tuple<A, B, C, D, E, F, G, H, I, J> && Equals((Tuple<A, B, C, D, E, F, G, H, I, J>)other);
+            var tmp = other as Tuple<A, B, C, D, E, F, G, H, I, J>;
+            return tmp != null && _item10.Equals(tmp._item10) && ((Tuple<A, B, C, D, E, F, G, H, I>)this).Equals(tmp);
         }
 
         public override int GetHashCode()
         {
-            return ItemA.GetHashCode()
-                   ^ _Tuple.RotateRight(ItemB.GetHashCode(), 1)
-                   ^ _Tuple.RotateRight(ItemC.GetHashCode(), 2)
-                   ^ _Tuple.RotateRight(ItemD.GetHashCode(), 3)
-                   ^ _Tuple.RotateRight(ItemE.GetHashCode(), 4)
-                   ^ _Tuple.RotateRight(ItemF.GetHashCode(), 5)
-                   ^ _Tuple.RotateRight(ItemG.GetHashCode(), 6)
-                   ^ _Tuple.RotateRight(ItemH.GetHashCode(), 7)
-                   ^ _Tuple.RotateRight(ItemI.GetHashCode(), 8)
-                   ^ _Tuple.RotateRight(ItemJ.GetHashCode(), 9);
+            return _item10.GetHashCode()
+                   ^ RotateRight(base.GetHashCode());
         }
 
         public override string ToString()
         {
             return String.Format("({0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9})",
-                                 ItemA, ItemB, ItemC, ItemD, ItemE,
-                                 ItemF, ItemG, ItemH, ItemI, ItemJ);
+                                 Item1, Item2, Item3, Item4, Item5,
+                                 Item6, Item7, Item8, Item9, _item10);
         }
     }
 }

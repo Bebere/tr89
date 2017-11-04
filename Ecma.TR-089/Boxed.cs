@@ -8,6 +8,8 @@
 //
 // The implicit operators allow Boxed<V>, V, and a System.ValueType which
 // is a CLI boxed V to be used interchangeably.
+using System.Runtime.CompilerServices;
+
 namespace System
 {
     [Serializable]
@@ -60,5 +62,18 @@ namespace System
         {
             return vtBox == null ? null : new Boxed<V>((V)vtBox);
         }
+
+        // When converting between Boxed<V> and System.ValueType we preserve null's
+        #if FEATURE_ACTION_BOX
+            public static implicit operator StrongBox<V>(Boxed<V> box)
+            {
+                return box == null ? null : new StrongBox<V>(box.item);
+            }
+
+            public static implicit operator Boxed<V>(StrongBox<V> sBox)
+            {
+                return sBox == null ? null : new Boxed<V>(sBox.Value);
+            }
+        #endif
     }
 }

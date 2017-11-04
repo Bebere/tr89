@@ -1,12 +1,24 @@
 // Standard delegates to use for function values
+using System.Runtime.CompilerServices;
+
+#if FEATURE_GENACTION_FUNC_TUPLE
+    [assembly: TypeForwardedTo(typeof(System.Function<>))]
+    [assembly: TypeForwardedTo(typeof(System.Function<,>))]
+    [assembly: TypeForwardedTo(typeof(System.Function<,,>))]
+    [assembly: TypeForwardedTo(typeof(System.Function<,,,>))]
+    [assembly: TypeForwardedTo(typeof(System.Function<,,,,>))]
+    [assembly: TypeForwardedTo(typeof(System.Function<,,,,,>))]
+#endif
 namespace System
 {
-    public delegate A Function<A>();
-    public delegate B Function<A, B>(A argA);
-    public delegate C Function<A, B, C>(A argA, B argB);
-    public delegate D Function<A, B, C, D>(A argA, B argB, C argC);
-    public delegate E Function<A, B, C, D, E>(A argA, B argB, C argC, D argD);
-    public delegate F Function<A, B, C, D, E, F>(A argA, B argB, C argC, D argD, E argE);
+    #if !FEATURE_GENACTION_FUNC_TUPLE
+        public delegate A Function<A>();
+        public delegate B Function<A, B>(A argA);
+        public delegate C Function<A, B, C>(A argA, B argB);
+        public delegate D Function<A, B, C, D>(A argA, B argB, C argC);
+        public delegate E Function<A, B, C, D, E>(A argA, B argB, C argC, D argD);
+        public delegate F Function<A, B, C, D, E, F>(A argA, B argB, C argC, D argD, E argE);
+    #endif
 
     // System.Predicate<T> is equivalent to System.Function<T, bool>,
     // System.Converter<T, U> is equivalent to System.Function<T, U>,
@@ -14,7 +26,7 @@ namespace System
     // Unfortunately structural equivalence is not available on delegate types
     // so these types are not interchangeable.
     // We define the following class and methods to convert between the matching pairs.
-    public static class DelegateCast
+    public static partial class DelegateCast
     {
         public static Function<T, bool> ToFunction<T>(Predicate<T> pred)
         {

@@ -86,9 +86,6 @@ namespace System
             return isB ? bField.ToString() : aField.ToString();
         }
 
-        #region unifiable
-        // For any Either<A,B> with A==B the following are ambiguous
-    #if AllowPotentialAmbiguity
     #warning Ignore CLSCompliant not needed warnings if they occur
         [CLSCompliant(false)] 
         public Either(A aValue)
@@ -105,14 +102,12 @@ namespace System
         }
 
         [CLSCompliant(false)] 
-        public static implicit operator Either<A, B>(A aValue) { return SetFirst(aValue); }
+        public static implicit operator Either<A, B>(A aValue) { return new Either<A, B>(aValue); }
         [CLSCompliant(false)] 
-        public static implicit operator Either<A, B>(B bValue) { return SetSecond(bValue); }
+        public static implicit operator Either<A, B>(B bValue) { return new Either<A, B>(bValue); }
         [CLSCompliant(false)] 
         public static explicit operator A(Either<A, B> abValue) { return abValue.First; }
         [CLSCompliant(false)] 
         public static explicit operator B(Either<A, B> abValue) { return abValue.Second; }
-    #endif
-        #endregion
     }
 }

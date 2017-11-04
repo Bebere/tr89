@@ -1,4 +1,7 @@
-Below is the, for lack of a better term, original README. A difference with the reference implementation is that the implementation has been split to one file per type family+attendant helper types.
+Below is the, for lack of a better term, original README. Differences with the reference implementation are as follow:
+	- The implementation has been split to one file per type family+attendant helper types
+	- The Tuple types have been changed to classes rather than structures, following Framework 4.0's implementation
+	- Ambiguous members are always allowed
 
 Ecma Common Generics
 
