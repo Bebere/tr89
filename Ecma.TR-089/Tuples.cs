@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 
-#if FEATURE_GENACTION_FUNC_TUPLE
+#if (!NET20 && !NET35)
     [assembly: TypeForwardedTo(typeof(System.Tuple<,>))]
     [assembly: TypeForwardedTo(typeof(System.Tuple<,,>))]
     [assembly: TypeForwardedTo(typeof(System.Tuple<,,,>))]
@@ -8,11 +8,15 @@ using System.Runtime.CompilerServices;
     [assembly: TypeForwardedTo(typeof(System.Tuple<,,,,,>))]
     [assembly: TypeForwardedTo(typeof(System.Tuple<,,,,,,>))]
     [assembly: TypeForwardedTo(typeof(System.Tuple<,,,,,,,>))]
-    [assembly: TypeForwardedTo(typeof(System.Tuple<,,,,,,,,>))]
-    [assembly: TypeForwardedTo(typeof(System.Tuple<,,,,,,,,,>))]
 #endif
 namespace System
 {
+    // The Tuple types are straighforward. All fields are accessed through
+    // readonly properties and are classes, as in the .Net Framework's
+    // implementation.
+    // A constructor, Equals, GetHashCode and ToString are defined for each type.
+    // Operators == and != are provided as per class library design guidelines.
+#if (NET20 || NET35)
     // Hashing: the hash for a tuple should be some combination of the hashes of its elements.
     // In this sample implementation we use a rotate+xor combintation for the hash function.
     // The CLI has no bit rotate instructions, and C# has no bit rotate operators, so we
@@ -41,12 +45,6 @@ namespace System
 
         public abstract override int GetHashCode();
     }
-
-    // The Tuple types are straighforward. All fields are accessed through
-    // readonly properties and are classes, as in the .Net Framework's
-    // implementation.
-    // A constructor, Equals, GetHashCode and ToString are defined for each type.
-    // Operators == and != are provided as per class library design guidelines.
 
     // 2-tuple
     // This tuple has two extra methods to allow Tuple<A,B> and KeyValuePair to interwork easily
@@ -339,6 +337,7 @@ namespace System
                                  Item6, Item7, _item8);
         }
     }
+#endif
 
     // 9-tuple
     [Serializable]
@@ -360,16 +359,48 @@ namespace System
             _item9 = valueI;
         }
 
-        public override bool Equals(object other)
+#if (!NET20 && !NET35)
+        public H Item8
         {
-            var tmp = other as Tuple<A, B, C, D, E, F, G, H, I>;
-            return tmp != null && _item9.Equals(tmp._item9) && ((Tuple<A, B, C, D, E, F, G, H>)this).Equals(tmp);
+            get
+            {
+                return Rest;
+            }
+        }
+
+        public static bool operator ==(Tuple<A, B, C, D, E, F, G, H, I> left, Tuple<A, B, C, D, E, F, G, H, I> right)
+        {
+            return left == null ? right == null : left.Equals(right);
+        }
+
+        public static bool operator !=(Tuple<A, B, C, D, E, F, G, H, I> left, Tuple<A, B, C, D, E, F, G, H, I> right)
+        {
+            return !(left == right);
+        }
+        
+        private static Int32 RotateHelper(Int32 value)
+        {
+            var tmp = (UInt32)value;
+            tmp = (tmp >> 1) | (tmp << (31));
+            return (Int32)tmp;
         }
 
         public override int GetHashCode()
         {
             return _item9.GetHashCode()
+                   ^ RotateHelper(base.GetHashCode());
+        }
+#else
+        public override int GetHashCode()
+        {
+            return _item9.GetHashCode()
                    ^ RotateRight(base.GetHashCode());
+        }
+#endif
+        public override bool Equals(object other)
+        {
+            var tmp = other as Tuple<A, B, C, D, E, F, G, H, I>;
+            return tmp != null && _item9.Equals(tmp._item9) && ((Tuple<A, B, C, D, E, F, G, H>)this).Equals(tmp);
         }
 
         public override string ToString()
@@ -379,7 +410,6 @@ namespace System
                                  Item6, Item7, Item8, _item9);
         }
     }
-
 
     // 10-tuple
     [Serializable]
@@ -407,11 +437,36 @@ namespace System
             return tmp != null && _item10.Equals(tmp._item10) && ((Tuple<A, B, C, D, E, F, G, H, I>)this).Equals(tmp);
         }
 
+#if (!NET20 && !NET35)
+        public static bool operator ==(Tuple<A, B, C, D, E, F, G, H, I, J> left, Tuple<A, B, C, D, E, F, G, H, I, J> right)
+        {
+            return left == null ? right == null : left.Equals(right);
+        }
+
+        public static bool operator !=(Tuple<A, B, C, D, E, F, G, H, I, J> left, Tuple<A, B, C, D, E, F, G, H, I, J> right)
+        {
+            return !(left == right);
+        }
+
+        private static Int32 RotateHelper(Int32 value)
+        {
+            var tmp = (UInt32)value;
+            tmp = (tmp >> 1) | (tmp << (31));
+            return (Int32)tmp;
+        }
+
+        public override int GetHashCode()
+        {
+            return _item10.GetHashCode()
+                   ^ RotateHelper(base.GetHashCode());
+        }
+#else
         public override int GetHashCode()
         {
             return _item10.GetHashCode()
                    ^ RotateRight(base.GetHashCode());
         }
+#endif
 
         public override string ToString()
         {

@@ -5,10 +5,10 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 
 [assembly: TypeForwardedTo(typeof(System.Action<>))]
-#if FEATURE_ACTION_BOX
+#if !NET20
     [assembly: TypeForwardedTo(typeof(System.Action))]
 #endif
-#if FEATURE_GENACTION_FUNC_TUPLE
+#if (!NET20 && !NET35)
     [assembly: TypeForwardedTo(typeof(System.Action<,>))]
     [assembly: TypeForwardedTo(typeof(System.Action<,,>))]
     [assembly: TypeForwardedTo(typeof(System.Action<,,,>))]
@@ -16,10 +16,10 @@ using System.Threading;
 #endif
 namespace System
 {
-    #if !FEATURE_ACTION_BOX
+    #if NET20
         public delegate void Action();
     #endif
-    #if !FEATURE_GENACTION_FUNC_TUPLE
+    #if (NET20 || NET35)
         public delegate void Action<A, B>(A argA, B argB);
         public delegate void Action<A, B, C>(A argA, B argB, C argC);
         public delegate void Action<A, B, C, D>(A argA, B argB, C argC, D argD);

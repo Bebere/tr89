@@ -1,25 +1,38 @@
 // A public default constructor for a value type always exists.
 // By the definition of Either<A, B> the default value is IsFirst is true
 // and First is default(A).
+using System.Runtime.InteropServices;
+
 namespace System
 {
-    [Serializable]
+    [Serializable, StructLayout(LayoutKind.Explicit, Pack = 1)]
     public struct Either<A, B>
     {
-        private A aField;
-        private B bField;
-        private bool isB;
+        [FieldOffset(0)]
+        private readonly bool isB;
+        [FieldOffset(sizeof(bool))]
+        private readonly B bField;
+        [FieldOffset(sizeof(bool))]
+        private readonly A aField;
 
         private Either(A x, B y, bool d)
         {
-            aField = x;
-            bField = y;
             isB = d;
+            if(d)
+            {
+                aField = default(A);
+                bField = y;
+            }
+            else
+            {
+                bField = default(B);
+                aField = x;
+            }
         }
 
         public static Either<A, B> MakeFirst(A aValue)
         {
-            return new Either<A, B>(aValue, default(B), false);
+            return new Either<A, B>(aValue);
         }
 
         public bool IsFirst
@@ -32,14 +45,14 @@ namespace System
             get
             {
                 if (isB)
-                    throw new System.InvalidOperationException();
+                    throw new InvalidOperationException();
                 return aField;
             }
         }
 
         public static Either<A, B> MakeSecond(B bValue)
         {
-            return new Either<A, B>(default(A), bValue, true);
+            return new Either<A, B>(bValue);
         }
 
         public bool IsSecond
@@ -52,7 +65,7 @@ namespace System
             get
             {
                 if (!isB)
-                    throw new System.InvalidOperationException();
+                    throw new InvalidOperationException();
                 return bField;
             }
         }
@@ -86,25 +99,18 @@ namespace System
             return isB ? bField.ToString() : aField.ToString();
         }
 
-    #warning Ignore CLSCompliant not needed warnings if they occur
         [CLSCompliant(false)] 
-        public Either(A aValue)
-        { aField = aValue;
-          bField = default(B);
-          isB = false;
-        }
+        public Either(A aValue) : this(aValue, default(B), false)
+        { }
 
         [CLSCompliant(false)] 
-        public Either(B bValue)
-        { aField = default(A);
-          bField = bValue;
-          isB = true;
-        }
+        public Either(B bValue) : this(default(A), bValue, true)
+        { }
 
         [CLSCompliant(false)] 
-        public static implicit operator Either<A, B>(A aValue) { return new Either<A, B>(aValue); }
+        public static implicit operator Either<A, B>(A aValue) { return MakeFirst(aValue); }
         [CLSCompliant(false)] 
-        public static implicit operator Either<A, B>(B bValue) { return new Either<A, B>(bValue); }
+        public static implicit operator Either<A, B>(B bValue) { return MakeSecond(bValue); }
         [CLSCompliant(false)] 
         public static explicit operator A(Either<A, B> abValue) { return abValue.First; }
         [CLSCompliant(false)] 

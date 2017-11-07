@@ -15,7 +15,7 @@ namespace System
     [Serializable]
     class Boxed<V> where V : struct
     {
-        private V item;
+        private readonly V item;
 
         // Constructors
 
@@ -63,8 +63,8 @@ namespace System
             return vtBox == null ? null : new Boxed<V>((V)vtBox);
         }
 
-        // When converting between Boxed<V> and System.ValueType we preserve null's
-        #if FEATURE_ACTION_BOX
+        // When converting between Boxed<V> and System.Runtime.CompilerServices.StrongBox we preserve null's
+        #if !NET20
             public static implicit operator StrongBox<V>(Boxed<V> box)
             {
                 return box == null ? null : new StrongBox<V>(box.item);

@@ -4,11 +4,10 @@ namespace System
     [Serializable]
     public struct Optional<T> : IComparable, IComparable<Optional<T>>
     { // fields are private
-        private T myValue;
-        private bool isValid;
+        private readonly T myValue;
+        private readonly bool isValid;
 
         // Constructors
-
         // The implicit nullary constructor is equivalent to:
         //    public Optional() { isValid = false; }
 
@@ -19,7 +18,6 @@ namespace System
         }
 
         // Accessors
-
         public bool HasValue
         {
             get { return isValid; }
@@ -38,10 +36,7 @@ namespace System
 
         public T GetValueOrDefault()
         {
-            if (isValid)
-                return myValue;
-            else
-                return default(T);
+            return GetValueOrDefault(default(T));
         }
 
         public T GetValueOrDefault(T alternateDefaultValue)

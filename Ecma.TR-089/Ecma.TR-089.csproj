@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-	<TargetFrameworks>net20;net30;net35</TargetFrameworks>
+	<TargetFrameworks>net20;net35;net40</TargetFrameworks>
 	<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 	<RootNamespace>System</RootNamespace>
   </PropertyGroup>
@@ -23,12 +23,6 @@
 	<RepositoryType>git</RepositoryType>
 	<PackageReleaseNotes>Adding Framework 4.0 on targets and changes to the implementation.</PackageReleaseNotes>
 	<PackageTags>.net ecma</PackageTags>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(TargetFramework)'!='net20' AND '$(TargetFramework)'!='net35' AND '$(TargetFramework)'!='net30'">
-    <DefineConstants>FEATURE_GENACTION_FUNC_TUPLE</DefineConstants>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(TargetFramework)'!='net20' AND '$(TargetFramework)'!='net30'">
-    <DefineConstants>FEATURE_ACTION_BOX</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
 	<Folder Include="Properties\" />
